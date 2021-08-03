@@ -27,7 +27,8 @@ function timestamp() {
 //endregion fn
 
 function Event({
-                   '@id':                   id = `_:${(new Date).valueOf()}_${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}`,
+                   '@context':              parent_context = [],
+                   '@id':                   id = undefined,
                    'prefix_event':          prefix_event = "",
                    'prefix_event_position': prefix_event_position = "",
                    'type':                  type = [],
@@ -35,8 +36,12 @@ function Event({
                    'time': time,
                    'fn':   fn,
                    //
+                   'owner':        owner,
                    'hasBeginning': hasBeginning,
-                   'hasEnd':       hasEnd
+                   'hasEnd':       hasEnd,
+                   //
+                   'contextHasPrefix': contextHasPrefix,
+                   'idAsBlankNode':    idAsBlankNode
                }) {
 
     let
@@ -44,6 +49,7 @@ function Event({
         tmp_node = undefined
     ;
 
+    id = ((id) ? id : idAsBlankNode("session/"));
     type.push(Event);
 
     fn = (fn || async function () {
@@ -60,21 +66,96 @@ function Event({
     } // if ()
 
     if (!hasEnd) {
-        event = new time['time:Instant'](hasBeginning);
+        event = new time['Instant'](hasBeginning);
     } else {
-        event = new time['time:ProperInterval'](hasBeginning, hasEnd);
+        event = new time['ProperInterval'](hasBeginning, hasEnd);
     } // if ()
 
     Object.defineProperties(fn, {
-            [(`${prefix_event}hasBeginning`)]: {
+            [(`${prefix_event}owner`)]:          {
                 value:      async () => {
-                    return await event['$serialize']();
+                    return ((owner) ? ((typeof owner === "string") ? owner : ((typeof owner === "object") ? owner['@id'] : owner)) : null);
                 },
                 enumerable: true
             },
-            [(`${prefix_event}hasEnd`)]:       {
+            [(`setEnd`)]:                        {
+                value:        (end) => {
+                    event = new time['ProperInterval'](hasBeginning, end);
+                },
+                enumerable: false
+            },
+            [(`${prefix_event}hasBeginning`)]:   {
                 value:      async () => {
-                    return "TODO";
+                    try {
+                        TODO TODO TODO let has = event['$serialize']()['hasBeginning'];
+
+                        return {
+                            '@type':              "Instant",
+                            'hasBeginning':       has['inXSDDateTimeStamp'],
+                            'hasDuration':        has['hasDuration'],
+                            'hasEnd':             has['inXSDDateTimeStamp'],
+                            'inDateTime':         has['inDateTime'],
+                            'inTimePosition':     has['inTimePosition'],
+                            'inXSDgYear':         has['inXSDgYear'],
+                            'inXSDgYearMonth':    has['inXSDgYearMonth'],
+                            'inXSDDateTimeStamp': has['inXSDDateTimeStamp']
+                        };
+                    } catch (jex) {
+                        throw jex;
+                    } // try
+
+                },
+                enumerable: true
+            },
+            [(`${prefix_event}hasDuration`)]:    {
+                value:      async () => {
+                    try {
+
+                        let
+                            has    = event['$serialize'](),
+                            result = has['hasDuration']
+                        ;
+                        return result;
+                    } catch (jex) {
+                        throw jex;
+                    } // try
+                },
+                enumerable: true
+            },
+            [(`${prefix_event}hasXSDDuration`)]: {
+                value:      async () => {
+                    try {
+
+                        let
+                            has    = event['$serialize'](),
+                            result = has['hasXSDDuration']
+                        ;
+                        return result;
+                    } catch (jex) {
+                        throw jex;
+                    } // try
+                },
+                enumerable: true
+            },
+            [(`${prefix_event}hasEnd`)]:         {
+                value:      async () => {
+                    try {
+
+                        let has = event['$serialize']()['hasEnd'];
+                        return {
+                            '@type':              "Instant",
+                            'hasBeginning':       has['inXSDDateTimeStamp'],
+                            'hasDuration':        has['hasDuration'],
+                            'hasEnd':             has['inXSDDateTimeStamp'],
+                            'inDateTime':         has['inDateTime'],
+                            'inTimePosition':     has['inTimePosition'],
+                            'inXSDgYear':         has['inXSDgYear'],
+                            'inXSDgYearMonth':    has['inXSDgYearMonth'],
+                            'inXSDDateTimeStamp': has['inXSDDateTimeStamp']
+                        };
+                    } catch (jex) {
+                        throw jex;
+                    } // try
                 },
                 enumerable: true
             }
@@ -89,21 +170,23 @@ function Event({
 
 async function serialize(presentation, node) {
     try {
-        presentation = (presentation || {});
+
+        presentation             = (presentation || {});
+        presentation['@context'] = ((presentation['@context']) ? presentation['@context'].concat(Event['@context']) : Event['@context']);
+
         if (!presentation['@id'])
             presentation['@id'] = node['@id'];
         if (!presentation['@type'])
-            presentation['@type'] = [System['@id']];
+            presentation['@type'] = [Event['@id']];
+
+        presentation['owner']          = await node['owner']();
+        //
+        presentation['hasBeginning']   = await node['hasBeginning']();
+        presentation['hasDuration']    = await node['hasDuration']();
+        presentation['hasXSDDuration'] = await node['hasXSDDuration']();
+        presentation['hasEnd']         = await node['hasEnd']();
 
         let temp_prefix = "";
-
-        //temp_prefix = `${system_preferredPrefix}startedAt`;
-        //if (node[temp_prefix] && !presentation[temp_prefix])
-        //    presentation[temp_prefix] = await node[temp_prefix]();
-        //
-        //temp_prefix = `${system_preferredPrefix}uptime`;
-        //if (node[temp_prefix] && !presentation[temp_prefix])
-        //    presentation[temp_prefix] = await node[temp_prefix]();
 
         return presentation;
     } catch (jex) {
@@ -113,7 +196,34 @@ async function serialize(presentation, node) {
 } // async function serialize
 
 Object.defineProperties(Event, {
-    '@id':        {value: "fua.agent.Event", enumerable: true},
+    '@context':        {
+        value:          [{
+            'time': "http://www.w3.org/2006/time#",
+            'evem': "http://testbed.nicos-rd.com/fua/event#",
+            //
+            'Event': "http://testbed.nicos-rd.com/fua/event#Event",
+            'event': "http://testbed.nicos-rd.com/fua/event#event",
+            'owner': "http://testbed.nicos-rd.com/fua/event#owner",
+            //
+
+            'Instant':            "http://www.w3.org/2006/time#Instant",
+            'ProperInterval':     "http://www.w3.org/2006/time#ProperInterval",
+            'Duration':           "http://www.w3.org/2006/time#Duration",
+            'hasBeginning':       "http://www.w3.org/2006/time#hasBeginning",
+            'hasDuration':        "http://www.w3.org/2006/time#hasDuration",
+            'hasEnd':             "http://www.w3.org/2006/time#hasEnd",
+            'inDateTime':         "http://www.w3.org/2006/time#inDateTime",
+            'inTimePosition':     "http://www.w3.org/2006/time#inTimePosition",
+            'inXSDgYear':         "http://www.w3.org/2006/time#inXSDgYear",
+            'inXSDgYearMonth':    "http://www.w3.org/2006/time#inXSDgYearMonth",
+            'inXSDDateTimeStamp': "http://www.w3.org/2006/time#inXSDDateTimeStamp",
+            'numericDuration':    "http://www.w3.org/2006/time#numericDuration",
+            'unitType':           "http://www.w3.org/2006/time#unitType"
+        }], enumerable: true
+    },
+    '@id':             {value: "http://www.nicos-rd.com/fua/event#Event", enumerable: true},
+    'rdfs:subClassOf': ["http://www.w3.org/2006/time#ProperInterval"],
+    //
     '$serialize': {value: serialize, enumerable: false}
 });
 
