@@ -1,5 +1,5 @@
 const
-    util         = require('./agent.event.util.js'),
+    util         = require('@nrd/fua.core.util'),
     {CloudEvent} = require('cloudevents'),
     EventEmitter = require('events');
 
@@ -11,16 +11,22 @@ class EventAgent {
     #createEventPrototype(param) {
         const agent = this;
         return {
-            async emit(ensureDelivery = true) {
+            _emitted: false,
+            emit(ensureDelivery = false) {
                 const event = this;
+                if (event._emitted) throw new Error('Event<' + event.id + '> was already emitted');
+                Object.defineProperties(event, {
+                    _emitted: {value: true, enumerable: false}
+                });
                 if (ensureDelivery) {
-                    await Promise.all(
+                    return Promise.all(
                         agent.#eventEmitter
                             .listeners(event.type)
                             .map(async (listener) => listener(event))
-                    );
+                    ).then(() => event);
                 } else {
                     agent.#eventEmitter.emit(event.type, event);
+                    return event;
                 }
             }
         };
@@ -40,11 +46,22 @@ class EventAgent {
         return this;
     } // EventAgent#once
 
+    /**
+     *
+     * @param eventName
+     * @param callback
+     * @returns {EventAgent}
+     */
     off(eventName, callback) {
         this.#eventEmitter.off(eventName, callback);
         return this;
     } // EventAgent#off
 
+    /**
+     * @template T
+     * @param {import("./types.d.ts").CloudEvent<T>} param
+     * @returns {import("./types.d.ts").Event<T>}
+     */
     createEvent(param) {
         const
             cloudEvent      = new CloudEvent(param),

@@ -6,12 +6,10 @@ agent.on('type.method.step', console.log);
 
 const
     event = agent.createEvent({
-        type: 'type.method.step',
-        // id:     '',
+        type:   'type.method.step',
         source: 'agent.event'
-        // time:   0
     });
 
 event.emit();
-
-// console.log();
+// event.emit().emit();
+// event.emit(true).then(val => val.emit()).catch(console.error);
