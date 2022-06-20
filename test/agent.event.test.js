@@ -1,25 +1,39 @@
 const
-    EventAgent = require('../src/agent.event.js'),
-    agent      = new EventAgent();
+    {describe, test, before} = require('mocha'),
+    expect                   = require('expect'),
+    EventAgent               = require('../src/agent.event.js');
 
-agent.on('type.method.step', console.log);
+describe('agent.domain', function () {
 
-const
-    event = agent.createEvent({
-        type: 'type.method.step',
-        // type:   'fua.module.weather.temperature.modified',
-        source:          'http://...',
-        datacontenttype: 'application/json',
-        // datacontenttype: 'text/turtle',
-        data: {
-            prov:  'agent.event',
-            value: '...',
-            tss:   0,
-            tsv:   0
-        }
-    });
+    test('basic usage', async function () {
 
-// console.log(event);
-event.emit();
-// event.emit().emit();
-// event.emit(true).then(val => val.emit()).catch(console.error);
+        const agent = new EventAgent();
+        let sum     = 0;
+
+        agent.on('type.method.add', event => sum += event.data.value);
+
+        const event = agent.createEvent({
+            type:            'type.method.add',
+            source:          'http://...',
+            datacontenttype: 'application/json',
+            data:            {value: 2}
+        });
+
+        expect(typeof event.emit).toBe('function');
+        await event.emit(true);
+        expect(() => event.emit()).toThrow();
+
+        expect(sum).toBe(2);
+
+        await agent.createEvent({
+            type:            'type.method.add',
+            source:          'http://...',
+            datacontenttype: 'application/json',
+            data:            {value: 3}
+        }).emit(true);
+
+        expect(sum).toBe(5);
+
+    }); // test
+
+}); // describe
