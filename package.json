@@ -7,7 +7,6 @@
     "src/*"
   ],
   "dependencies": {
-    "@nrd/fua.core.util": "1.0.0",
     "cloudevents": "^5.3.2"
   },
   "devDependencies": {
