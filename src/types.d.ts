@@ -15,6 +15,12 @@ export type CloudEvent<T> = {
     [other: string]: unknown;
 }
 
+export interface Event<T> extends CloudEvent<T> {
+    emitted: boolean;
+    emit(ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
+    encode(binary?: boolean): StructuredEncoding | BinaryEncoding;
+}
+
 export type StructuredEncoding = {
     headers: {
         'content-type': 'application/cloudevents+json' | 'application/cloudevents+json; charset=utf-8',
@@ -37,16 +43,17 @@ export type BinaryEncoding = {
     body: string
 }
 
-export interface Event<T> extends CloudEvent<T> {
-    emitted: boolean;
-    emit(ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
-    encode(binary?: boolean): StructuredEncoding | BinaryEncoding;
-}
-
 export interface EventTemplate {
     fromEvent<T>(eventParam: CloudEvent<T>): Event<T>;
-    fromData<T>(eventData: any): Event<T>;
+    fromData<T>(eventData: any, contentType?: string): Event<T>;
     fromJSON<T>(eventData: Object): Event<T>;
+}
+
+export interface EventEmitter {
+    on(eventPattern: string, listener: Function): EventEmitter;
+    once(eventPattern: string, listener: Function): EventEmitter;
+    off(eventPattern: string, listener: Function): EventEmitter;
+    emit(eventName: string, ...args: any): Promise<Array<any>>;
 }
 
 export interface EventAgent {
@@ -58,11 +65,4 @@ export interface EventAgent {
     createTemplate(defaultParam: CloudEvent<undefined>): EventTemplate;
     emit<T>(eventParam: CloudEvent<T>, ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
     decode<T>(encoded: string | StructuredEncoding | BinaryEncoding): Event<T>;
-}
-
-export interface EventEmitter {
-    on(eventType: string, callback: Function): EventEmitter;
-    once(eventType: string, callback: Function): EventEmitter;
-    off(eventType: string, callback: Function): EventEmitter;
-    emit(eventType: string, ...args: any): EventEmitter;
 }

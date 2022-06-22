@@ -11,8 +11,9 @@
 - If the application emits an event that is relevant for another component in the network, I want an easy serialization
   and deserialization on the other end.
 - If an event is created, the specific type of the event should be used to validate its data.
+- Multiple events should be selected/listened to via appropriate patterns.
 
-## Interface
+## [Interface](./src/types.d.ts)
 
 ```ts
 type CloudEvent<T> = {
@@ -30,6 +31,12 @@ type CloudEvent<T> = {
     data_base64?: string;
 
     [other: string]: unknown;
+}
+
+interface Event<T> extends CloudEvent<T> {
+    emitted: boolean;
+    emit(ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
+    encode(binary?: boolean): StructuredEncoding | BinaryEncoding;
 }
 
 type StructuredEncoding = {
@@ -54,16 +61,17 @@ type BinaryEncoding = {
     body: string
 }
 
-interface Event<T> extends CloudEvent<T> {
-    emitted: boolean;
-    emit(ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
-    encode(binary?: boolean): StructuredEncoding | BinaryEncoding;
+interface EventTemplate {
+    fromEvent<T>(eventParam: CloudEvent<T>): Event<T>;
+    fromData<T>(eventData: any, contentType?: string): Event<T>;
+    fromJSON<T>(eventData: Object): Event<T>;
 }
 
-interface Template {
-    fromEvent<T>(eventParam: CloudEvent<T>): Event<T>;
-    fromData<T>(eventData: any): Event<T>;
-    fromJSON<T>(eventData: Object): Event<T>;
+interface EventEmitter {
+    on(eventPattern: string, listener: Function): EventEmitter;
+    once(eventPattern: string, listener: Function): EventEmitter;
+    off(eventPattern: string, listener: Function): EventEmitter;
+    emit(eventName: string, ...args: any): Promise<Array<any>>;
 }
 
 interface EventAgent {
@@ -72,7 +80,7 @@ interface EventAgent {
     off(eventType: string, callback: Function): EventAgent;
     addValidator(eventType: string, validator: Function): EventAgent;
     createEvent<T>(eventParam: CloudEvent<T>): Event<T>;
-    createTemplate(defaultParam: CloudEvent): Template;
+    createTemplate(defaultParam: CloudEvent<undefined>): EventTemplate;
     emit<T>(eventParam: CloudEvent<T>, ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
     decode<T>(encoded: string | StructuredEncoding | BinaryEncoding): Event<T>;
 }

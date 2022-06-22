@@ -10,40 +10,40 @@ class EventAgent {
     #validators = new Map();
 
     /**
-     * @param eventType
-     * @param callback
+     * @param {string} eventPattern
+     * @param {Function} callback
      * @returns {EventAgent}
      */
-    on(eventType, callback) {
-        this.#emitter.on(eventType, callback);
+    on(eventPattern, callback) {
+        this.#emitter.on(eventPattern, callback);
         return this;
     } // EventAgent#on
 
     /**
-     * @param eventType
-     * @param callback
+     * @param {string} eventPattern
+     * @param {Function} callback
      * @returns {EventAgent}
      */
-    once(eventType, callback) {
-        this.#emitter.once(eventType, callback);
+    once(eventPattern, callback) {
+        this.#emitter.once(eventPattern, callback);
         return this;
     } // EventAgent#once
 
     /**
-     * @param eventType
-     * @param callback
+     * @param {string} eventPattern
+     * @param {Function} callback
      * @returns {EventAgent}
      */
-    off(eventType, callback) {
-        this.#emitter.off(eventType, callback);
+    off(eventPattern, callback) {
+        this.#emitter.off(eventPattern, callback);
         return this;
     } // EventAgent#off
 
-    addValidator(eventType, validator) {
-        util.assert(util.isString(eventType), 'expected eventType to be a string');
+    addValidator(eventName, validator) {
+        util.assert(util.isEventName(eventName), 'expected eventName to be an event string');
         util.assert(util.isFunction(validator), 'expected validator to be a function');
-        util.assert(!this.#validators.has(eventType), 'eventType="' + eventType + '" has already been added');
-        this.#validators.set(eventType, validator);
+        util.assert(!this.#validators.has(eventName), 'eventName="' + eventName + '" has already been added');
+        this.#validators.set(eventName, validator);
         return this;
     } // EventAgent#addValidator
 
@@ -56,6 +56,7 @@ class EventAgent {
         const cloudEvent = (eventParam instanceof model.CloudEvent)
             ? eventParam
             : new model.CloudEvent(eventParam);
+        util.assert(util.isEventName(cloudEvent.type), 'expected cloudEvent.type to be an event string');
         if (this.#validators.has(cloudEvent.type))
             this.#validators.get(cloudEvent.type).call(this, cloudEvent);
         return new model.Event(cloudEvent, this.#emitter);

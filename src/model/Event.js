@@ -52,11 +52,12 @@ class Event {
         util.assert(!this.#emitted, 'Event<' + this.id + '> was already emitted');
         this.#emitted = true;
         if (ensureDelivery) {
-            return Promise.all(
-                this.#emitter
-                    .listeners(this.type)
-                    .map(async (listener) => listener(this))
-            ).then(() => this);
+            // return Promise.all(
+            //     this.#emitter
+            //         .listeners(this.type)
+            //         .map(async (listener) => listener(this))
+            // ).then(() => this);
+            return this.#emitter.emit(this.type, this).then(() => this);
         } else {
             this.#emitter.emit(this.type, this);
             return this;

@@ -39,6 +39,8 @@ describe('agent.event', function () {
         expect(() => event.emit()).toThrow();
         await agent.createEvent(event).emit(true); // sum += 2
 
+        expect(sum).toBe(7);
+
         await agent.emit({
             type:            'type.method.add',
             source:          'http://...',
@@ -47,6 +49,8 @@ describe('agent.event', function () {
         }, true); // sum += 1
 
         await agent.emit(event, true); // sum += 2
+
+        expect(sum).toBe(10);
 
         await expect(agent.emit({
             type:            'type.method.add',
@@ -67,6 +71,8 @@ describe('agent.event', function () {
 
         agent.decode(event2_structured.body).emit(true); // sum += 5
         agent.decode(event2_binary).emit(true); // sum += 5
+
+        expect(sum).toBe(20);
 
         const template = agent.createTemplate({
             type:   'type.method.add',
