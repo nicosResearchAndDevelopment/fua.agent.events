@@ -86,6 +86,7 @@ describe('agent.event', function () {
                 throw new Error('expected datacontenttype to be "application/json"');
             if (typeof cloudEvent.data.value !== 'number')
                 throw new Error('expected data.value to be a number');
+            console.log(cloudEvent);
         });
 
         expect(() => template.fromData(6)).toThrow('expected data to be an object');

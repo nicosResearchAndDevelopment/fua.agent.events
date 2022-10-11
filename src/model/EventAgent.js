@@ -86,7 +86,7 @@ class EventAgent {
 
     /**
      * @param {CloudEvent} defaultParam
-     * @returns {Template}
+     * @returns {EventTemplate}
      */
     createTemplate(defaultParam) {
         return new model.EventTemplate(this, defaultParam);
