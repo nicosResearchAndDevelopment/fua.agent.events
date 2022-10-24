@@ -16,6 +16,7 @@ const
  * @property {string} [time]
  * @property {T} [data]
  * @property {string} [data_base64]
+ * @alias fua.agent.event.Event
  * @see https://github.com/cloudevents/sdk-javascript/blob/main/src/event/interfaces.ts JavaScript SDK for CloudEvents
  */
 class Event {

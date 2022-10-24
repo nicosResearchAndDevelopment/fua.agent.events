@@ -4,6 +4,9 @@ const
     util  = require('../agent.event.util.js'),
     model = require('../agent.event.model.js');
 
+/**
+ * @alias fua.agent.event.EventAgent
+ */
 class EventAgent {
 
     #emitter    = new model.EventEmitter();
