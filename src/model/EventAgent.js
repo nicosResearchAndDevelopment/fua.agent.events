@@ -34,22 +34,14 @@ class EventAgent {
 
     /**
      * @param {string} eventPattern
-     * @param {Function} callback
+     * @param {Function} [callback]
      * @returns {EventAgent}
      */
     off(eventPattern, callback) {
-        this.#emitter.off(eventPattern, callback);
+        if (callback) this.#emitter.off(eventPattern, callback);
+        else this.#emitter.clear(eventPattern);
         return this;
     } // EventAgent#off
-
-    /**
-     * @param {string} eventPattern
-     * @returns {EventAgent}
-     */
-    clear(eventPattern) {
-        this.#emitter.clear(eventPattern);
-        return this;
-    } // EventAgent#clear
 
     addValidator(eventName, validator) {
         util.assert(util.isEventName(eventName), 'expected eventName to be an event string');
