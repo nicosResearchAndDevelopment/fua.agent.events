@@ -22,18 +22,17 @@ util.eventNameMatchesPattern = function (eventName, eventPattern) {
         nameParts    = eventName.split('.'),
         patternParts = eventPattern.split('.');
 
+    let namePart, patternPart;
     while (nameParts.length > 0 && patternParts.length > 0) {
-        const
-            namePart    = nameParts.shift(),
-            patternPart = patternParts.shift();
-
+        namePart    = nameParts.shift();
+        patternPart = patternParts.shift();
         if (patternPart === '**') return true;
         if (patternPart === '*') continue;
         if (patternPart === namePart) continue;
         return false;
     }
 
-    return patternParts.length === nameParts.length;
+    return patternParts.length === nameParts.length && (namePart !== '**' || patternPart === '**');
 };
 
 module.exports = util;

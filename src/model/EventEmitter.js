@@ -62,6 +62,21 @@ class EventEmitter {
         return Promise.all(matchedListeners.map(async listener => listener.apply(null, args)));
     } // EventEmitter#emit
 
+    clear(clearPattern) {
+        util.assert(util.isEventPattern(clearPattern), 'expected clearPattern to be an event string');
+
+        for (let [eventPattern, listeners] of this.#events.entries()) {
+            if (util.eventNameMatchesPattern(eventPattern, clearPattern)) {
+                for (let listener of listeners.keys()) {
+                    listeners.delete(listener);
+                }
+                if (listeners.size === 0) this.#events.delete(eventPattern);
+            }
+        }
+
+        return this;
+    } // EventEmitter#clear
+
 } // EventEmitter
 
 module.exports = EventEmitter;

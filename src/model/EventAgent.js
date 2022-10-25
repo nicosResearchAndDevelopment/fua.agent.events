@@ -42,6 +42,15 @@ class EventAgent {
         return this;
     } // EventAgent#off
 
+    /**
+     * @param {string} eventPattern
+     * @returns {EventAgent}
+     */
+    clear(eventPattern) {
+        this.#emitter.clear(eventPattern);
+        return this;
+    } // EventAgent#clear
+
     addValidator(eventName, validator) {
         util.assert(util.isEventName(eventName), 'expected eventName to be an event string');
         util.assert(util.isFunction(validator), 'expected validator to be a function');
