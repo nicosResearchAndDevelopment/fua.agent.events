@@ -14,9 +14,8 @@ util.decodeCloudEvent = function (encodedEvent) {
     return HTTP.toEvent(encodedEvent);
 };
 
-util.isEventName = util.StringValidator(/^[a-z_][a-z_\d\-+]*(?:\.[a-z_][a-z_\d\-+]*)*$/i);
-
-util.isEventPattern = util.StringValidator(/^(?:[a-z_][a-z_\d\-+]*|\*|\*\*(?=$))(?:\.(?:[a-z_][a-z_\d\-+]*|\*|\*\*(?=$)))*$/i);
+util.isEventName    = util.StringValidator(/^[\w_\-+]+(?:\.[\w_\-+]+)*$/);
+util.isEventPattern = util.StringValidator(/^(?:[\w_\-+]+|\*|\*\*(?=$))(?:\.(?:[\w_\-+]+|\*|\*\*(?=$)))*$/);
 
 util.eventNameMatchesPattern = function (eventName, eventPattern) {
     const
