@@ -96,6 +96,19 @@ class EventAgent {
         return new model.EventTemplate(this, defaultParam);
     } // EventAgent#createTemplate
 
+    // IDEA convenience method for connecting the event agent to remote servers, e.g. socket.io
+    // connectSocketIO(socket, outgoing) {
+    //     util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
+    //         'expected socket to be an IO Socket');
+    //     util.assert(util.isArray(outgoing) && outgoing.every(util.isEventPattern),
+    //         'expected outgoing to be an event string array');
+    //
+    //     const eventListener = (event) => socket.emit('fua.agent.event', event.encode());
+    //     socket.on('fua.agent.event', (encoded) => this.decode(encoded).emit());
+    //     socket.on('disconnect', () => outgoing.every(eventPattern => this.off(eventPattern, eventListener)));
+    //     outgoing.every(eventPattern => this.on(eventPattern, eventListener));
+    // }
+
 } // EventAgent
 
 module.exports = EventAgent;
