@@ -97,12 +97,16 @@ class EventAgent {
     } // EventAgent#createTemplate
 
     /**
-     * @param {import('socket.io').Socket | import('socket.io-client').Socket} socket
+     * @param {import('socket.io').Socket | import('socket.io-client').Socket | {
+     *     on(eventName: string, callback: Function): any,
+     *     emit(eventName: string, ...args: any): any,
+     *     disconnected?: boolean
+     * }} socket
      * @param {string | Array<string>} [outgoing='**']
      * @param {boolean} [binary=false]
      * @returns {void}
-     * @see https://socket.io/docs/v4/server-api/#socket Server API
-     * @see https://socket.io/docs/v4/client-api/#socket Client API
+     * @see https://socket.io/docs/v4/server-api/#socket IO Server Socket
+     * @see https://socket.io/docs/v4/client-api/#socket IO Client Socket
      */
     connectSocketIO(socket, outgoing = '**', binary = false) {
         util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
@@ -118,9 +122,8 @@ class EventAgent {
             attachSender   = () => outgoingEvents.every(eventPattern => this.on(eventPattern, eventSender)),
             detachSender   = () => outgoingEvents.every(eventPattern => this.off(eventPattern, eventSender));
 
-        if (socket.client || socket.connected) attachSender();
-        // if (!socket.disconnected) attachSender();
         socket.on(transportEvent, eventReceiver);
+        if (!socket.disconnected) attachSender();
         socket.on('connect', attachSender);
         socket.on('disconnect', detachSender);
     } // EventAgent#connectSocketIO
