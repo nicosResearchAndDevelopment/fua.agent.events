@@ -96,18 +96,34 @@ class EventAgent {
         return new model.EventTemplate(this, defaultParam);
     } // EventAgent#createTemplate
 
-    // IDEA convenience method for connecting the event agent to remote servers, e.g. socket.io
-    // connectSocketIO(socket, outgoing) {
-    //     util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
-    //         'expected socket to be an IO Socket');
-    //     util.assert(util.isArray(outgoing) && outgoing.every(util.isEventPattern),
-    //         'expected outgoing to be an event string array');
-    //
-    //     const eventListener = (event) => socket.emit('fua.agent.event', event.encode());
-    //     socket.on('fua.agent.event', (encoded) => this.decode(encoded).emit());
-    //     socket.on('disconnect', () => outgoing.every(eventPattern => this.off(eventPattern, eventListener)));
-    //     outgoing.every(eventPattern => this.on(eventPattern, eventListener));
-    // }
+    /**
+     * @param {import('socket.io').Socket | import('socket.io-client').Socket} socket
+     * @param {string | Array<string>} [outgoing='**']
+     * @param {boolean} [binary=false]
+     * @returns {void}
+     * @see https://socket.io/docs/v4/server-api/#socket Server API
+     * @see https://socket.io/docs/v4/client-api/#socket Client API
+     */
+    connectSocketIO(socket, outgoing = '**', binary = false) {
+        util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
+            'expected socket to be an IO Socket');
+        util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
+            'expected outgoing to be an event string or event string array');
+
+        const
+            transportEvent = 'fua.agent.event',
+            outgoingEvents = util.toArray(outgoing),
+            eventReceiver  = (encoded) => this.decode(encoded).emit(),
+            eventSender    = (event) => socket.emit(transportEvent, event.encode(binary)),
+            attachSender   = () => outgoingEvents.every(eventPattern => this.on(eventPattern, eventSender)),
+            detachSender   = () => outgoingEvents.every(eventPattern => this.off(eventPattern, eventSender));
+
+        if (socket.client || socket.connected) attachSender();
+        // if (!socket.disconnected) attachSender();
+        socket.on(transportEvent, eventReceiver);
+        socket.on('connect', attachSender);
+        socket.on('disconnect', detachSender);
+    } // EventAgent#connectSocketIO
 
 } // EventAgent
 

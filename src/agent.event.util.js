@@ -17,6 +17,9 @@ util.decodeCloudEvent = function (encodedEvent) {
 util.isEventName    = util.StringValidator(/^[\w_\-+]+(?:\.[\w_\-+]+)*$/);
 util.isEventPattern = util.StringValidator(/^(?:[\w_\-+]+|\*|\*\*(?=$))(?:\.(?:[\w_\-+]+|\*|\*\*(?=$)))*$/);
 
+util.isEventNameArray    = util.ArrayValidator(util.isEventName);
+util.isEventPatternArray = util.ArrayValidator(util.isEventPattern);
+
 util.eventNameMatchesPattern = function (eventName, eventPattern) {
     const
         nameParts    = eventName.split('.'),
