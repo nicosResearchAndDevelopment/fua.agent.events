@@ -108,7 +108,7 @@ class EventAgent {
      * @see https://socket.io/docs/v4/server-api/#socket IO Server Socket
      * @see https://socket.io/docs/v4/client-api/#socket IO Client Socket
      */
-    connectSocketIO(socket, outgoing = '**', binary = false) {
+    connectIOSocket(socket, outgoing = '**', binary = false) {
         util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
             'expected socket to be an IO Socket');
         util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
@@ -126,7 +126,7 @@ class EventAgent {
         if (!socket.disconnected) attachSender();
         socket.on('connect', attachSender);
         socket.on('disconnect', detachSender);
-    } // EventAgent#connectSocketIO
+    } // EventAgent#connectIOSocket
 
 } // EventAgent
 
