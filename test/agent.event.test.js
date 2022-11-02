@@ -169,11 +169,11 @@ describe('agent.event', function () {
     });
 
     test('http connection', async function () {
-        const PORT = 3002;
+        const PORT = 3002, BINARY = false;
 
         const serverAgent = new EventAgent();
         const httpServer  = http.createServer();
-        serverAgent.connectHttpServer(httpServer); // TODO
+        serverAgent.connectHttpServer(httpServer);
 
         await new Promise(resolve => httpServer.listen(PORT, resolve));
         console.log('http server is listening');
@@ -183,7 +183,7 @@ describe('agent.event', function () {
         };
 
         const clientAgent = new EventAgent();
-        clientAgent.connectHttpRequest({port: PORT}, 'client.to.**');
+        clientAgent.connectHttpTarget({port: PORT}, 'client.to.**', BINARY);
 
         await agentTestRequest(serverAgent, clientAgent);
         console.log('request is finished');

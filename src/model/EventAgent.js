@@ -196,7 +196,7 @@ class EventAgent {
      * @returns {{close: Function}}
      * @see https://nodejs.org/docs/latest-v16.x/api/http.html#httprequestoptions-callback
      */
-    connectHttpRequest(requestOptions = {}, outgoing = '**', binary = false) {
+    connectHttpTarget(requestOptions = {}, outgoing = '**', binary = false) {
         util.assert(util.isObject(requestOptions),
             'expected requestOptions to be an object');
         util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
@@ -221,7 +221,7 @@ class EventAgent {
 
         attachSender();
         return {close: detachSender};
-    } // EventAgent#connectHttpRequest
+    } // EventAgent#connectHttpTarget
 
     /**
      * @param {module:http.IncomingMessage} request
@@ -229,7 +229,7 @@ class EventAgent {
      * @returns {void}
      * @see https://nodejs.org/docs/latest-v16.x/api/http.html#class-httpincomingmessage
      */
-    connectHttpConnection(request, response) {
+    connectHttpRequest(request, response) {
         util.assert(util.isFunction(request?.on),
             'expected request to be an http incoming message');
 
@@ -247,7 +247,7 @@ class EventAgent {
                 response.writeHead(400, 'Bad Request').end();
             }
         });
-    } // EventAgent#connectHttpConnection
+    } // EventAgent#connectHttpRequest
 
     /**
      * @param {module:http.Server} server
@@ -258,7 +258,7 @@ class EventAgent {
         util.assert(util.isFunction(server?.on),
             'expected server to be an http Server');
 
-        server.on('request', (request, response) => this.connectHttpConnection(request, response));
+        server.on('request', (request, response) => this.connectHttpRequest(request, response));
     } // EventAgent#connectHttpServer
 
 } // EventAgent
