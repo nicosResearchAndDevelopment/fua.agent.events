@@ -224,7 +224,7 @@ class EventAgent {
     } // EventAgent#connectHttpTarget
 
     /**
-     * @param {module:http.IncomingMessage} request
+     * @param {module:http.IncomingMessage | { completed: true, headers: Object, body?: string | Object }} request
      * @param {module:http.ServerResponse} response
      * @returns {void}
      * @see https://nodejs.org/docs/latest-v16.x/api/http.html#class-httpincomingmessage
@@ -233,20 +233,26 @@ class EventAgent {
         util.assert(util.isFunction(request?.on),
             'expected request to be an http incoming message');
 
-        const chunks = [];
-        request.on('data', chunk => chunks.push(chunk));
-        request.on('end', () => {
-            try {
-                this.decode({
-                    headers: request.headers,
-                    body:    chunks.join('')
-                }).emit();
-                response.writeHead(202, 'Accepted').end();
-            } catch (err) {
-                console.error(err);
-                response.writeHead(400, 'Bad Request').end();
-            }
-        });
+        if (!request.complete) {
+            const chunks = [];
+            request.on('data', chunk => chunks.push(chunk));
+            request.on('end', () => {
+                request.body = chunks.join('');
+                this.connectHttpRequest(request, response);
+            });
+            return;
+        }
+
+        try {
+            this.decode({
+                headers: request.headers,
+                body:    request.body
+            }).emit();
+            response.writeHead(202, 'Accepted').end();
+        } catch (err) {
+            console.error(err);
+            response.writeHead(400, 'Bad Request').end();
+        }
     } // EventAgent#connectHttpRequest
 
     /**

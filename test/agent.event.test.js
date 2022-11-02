@@ -5,7 +5,8 @@ const
     SocketIO                    = require('socket.io'),
     SocketIOClient              = require('socket.io-client'),
     net                         = require('net'),
-    http                        = require('http');
+    http                        = require('http'),
+    express                     = require('express');
 
 describe('agent.event', function () {
 
@@ -176,6 +177,32 @@ describe('agent.event', function () {
         const serverAgent = new EventAgent();
         const httpServer  = http.createServer();
         serverAgent.connectHttpServer(httpServer);
+
+        await new Promise(resolve => httpServer.listen(PORT, resolve));
+        console.log('http server is listening');
+
+        cleanUp = async function () {
+            await new Promise(resolve => httpServer.close(resolve));
+        };
+
+        const clientAgent = new EventAgent();
+        clientAgent.connectHttpTarget({port: PORT}, 'client.to.**', BINARY);
+
+        await agentTestRequest(serverAgent, clientAgent);
+        console.log('request is finished');
+    });
+
+    test('express connection', async function () {
+        const PORT = 3002, BINARY = false, PRE_PARSE = false;
+
+        const serverAgent = new EventAgent();
+        const httpApp     = express(), httpServer = http.createServer(httpApp);
+
+        if (PRE_PARSE) httpApp.use(express.json({type: ['application/json', 'application/*+json']}));
+        httpApp.post('/', function (request, response) {
+            console.log({headers: request.headers, body: request.body, complete: request.complete});
+            serverAgent.connectHttpRequest(request, response);
+        });
 
         await new Promise(resolve => httpServer.listen(PORT, resolve));
         console.log('http server is listening');
