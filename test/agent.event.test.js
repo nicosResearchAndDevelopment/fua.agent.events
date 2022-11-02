@@ -160,8 +160,10 @@ describe('agent.event', function () {
         console.log('net socket is connected');
 
         cleanUp = async function () {
-            await new Promise(resolve => clientSocket.end(resolve));
-            await new Promise(resolve => netServer.close(resolve));
+            await Promise.all([
+                new Promise(resolve => clientSocket.end(resolve)),
+                new Promise(resolve => netServer.close(resolve))
+            ]);
         };
 
         await agentHelloWorldHandshake(serverAgent, clientAgent);
