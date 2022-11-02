@@ -77,12 +77,20 @@ interface EventEmitter {
 interface EventAgent {
     on(eventType: string, callback: Function): EventAgent;
     once(eventType: string, callback: Function): EventAgent;
-    off(eventType: string, callback: Function): EventAgent;
+    off(eventType: string, callback?: Function): EventAgent;
     addValidator(eventType: string, validator: Function): EventAgent;
     createEvent<T>(eventParam: CloudEvent<T>): Event<T>;
     createTemplate(defaultParam: CloudEvent<undefined>): EventTemplate;
     emit<T>(eventParam: CloudEvent<T>, ensureDelivery?: boolean): Event<T> | Promise<Event<T>>;
     decode<T>(encoded: string | StructuredEncoding | BinaryEncoding): Event<T>;
+
+    connectIOSocket(socket: import('socket.io').Socket | import('socket.io-client'), outgoing?: string | Array<string>): void;
+    connectIOServer(socket: import('socket.io').Server, outgoing?: string | Array<string>): void;
+    connectNetSocket(socket: import('net').Socket, outgoing?: string | Array<string>): void;
+    connectNetServer(socket: import('net').Server, outgoing?: string | Array<string>): void;
+    connectHttpTarget(requestOptions: import('http').RequestOptions, outgoing?: string | Array<string>, binary?: boolean): { close: Function };
+    connectHttpRequest(request: import('http').IncomingMessage, response: import('http').ServerResponse): void;
+    connectHttpServer(server: import('http').Server): void;
 }
 ```
 
