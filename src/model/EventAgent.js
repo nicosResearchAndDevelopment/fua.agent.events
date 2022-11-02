@@ -103,12 +103,11 @@ class EventAgent {
      *     disconnected?: boolean
      * }} socket
      * @param {string | Array<string>} [outgoing='**']
-     * @param {boolean} [binary=false]
      * @returns {void}
      * @see https://socket.io/docs/v4/server-api/#socket IO Server Socket
      * @see https://socket.io/docs/v4/client-api/#socket IO Client Socket
      */
-    connectIOSocket(socket, outgoing = '**', binary = false) {
+    connectIOSocket(socket, outgoing = '**') {
         util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.emit),
             'expected socket to be an IO Socket');
         util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
@@ -117,8 +116,10 @@ class EventAgent {
         const
             transportEvent = 'fua.agent.event',
             outgoingEvents = util.toArray(outgoing),
-            eventReceiver  = (encoded) => this.decode(encoded).emit(),
-            eventSender    = (event) => socket.emit(transportEvent, event.encode(binary)),
+            eventReceiver  = (eventParam) => this.emit(eventParam),
+            // eventReceiver  = (eventParam, acknowledge) => this.emit(eventParam, true).then(acknowledge),
+            eventSender    = (event) => socket.emit(transportEvent, event),
+            // eventSender    = (event) => new Promise(resolve => socket.emit(transportEvent, event, resolve)),
             attachSender   = () => outgoingEvents.every(eventPattern => this.on(eventPattern, eventSender)),
             detachSender   = () => outgoingEvents.every(eventPattern => this.off(eventPattern, eventSender));
 
@@ -127,6 +128,138 @@ class EventAgent {
         socket.on('connect', attachSender);
         socket.on('disconnect', detachSender);
     } // EventAgent#connectIOSocket
+
+    /**
+     * @param {import('socket.io').Server | {
+     *     on(eventName: string, callback: Function): any
+     * }} server
+     * @param {string | Array<string>} [outgoing='**']
+     * @returns {void}
+     * @see https://socket.io/docs/v4/server-api/#socket IO Server Socket
+     * @see https://socket.io/docs/v4/client-api/#socket IO Client Socket
+     */
+    connectIOServer(server, outgoing = '**') {
+        util.assert(util.isFunction(server?.on),
+            'expected server to be an IO Server');
+        util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
+            'expected outgoing to be an event string or event string array');
+
+        server.on('connection', (socket) => this.connectIOSocket(socket, outgoing));
+    } // EventAgent#connectIOServer
+
+    /**
+     * @param {module:net.Socket} socket
+     * @param {string | Array<string>} [outgoing='**']
+     * @returns {void}
+     * @see https://nodejs.org/docs/latest-v16.x/api/net.html#class-netsocket
+     */
+    connectNetSocket(socket, outgoing = '**') {
+        util.assert(util.isFunction(socket?.on) && util.isFunction(socket?.write) && !socket?.destroyed,
+            'expected socket to be an active net Socket');
+        util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
+            'expected outgoing to be an event string or event string array');
+
+        const
+            outgoingEvents = util.toArray(outgoing),
+            eventReceiver  = (data) => this.emit(JSON.parse(data)),
+            eventSender    = (event) => socket.write(JSON.stringify(event)),
+            // eventSender    = (event) => new Promise(resolve => socket.write(JSON.stringify(event), resolve)),
+            attachSender   = () => outgoingEvents.every(eventPattern => this.on(eventPattern, eventSender)),
+            detachSender   = () => outgoingEvents.every(eventPattern => this.off(eventPattern, eventSender));
+
+        socket.on('data', eventReceiver);
+        // if (!socket.pending) attachSender();
+        // else socket.on('connect', attachSender);
+        attachSender();
+        socket.on('close', detachSender);
+    } // EventAgent#connectNetSocket
+
+    /**
+     * @param {module:net.Server} server
+     * @param {string | Array<string>} [outgoing='**']
+     * @returns {void}
+     * @see https://nodejs.org/docs/latest-v16.x/api/net.html#class-netserver
+     */
+    connectNetServer(server, outgoing = '**') {
+        util.assert(util.isFunction(server?.on),
+            'expected server to be a net Server');
+        util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
+            'expected outgoing to be an event string or event string array');
+
+        server.on('connection', (socket) => this.connectNetSocket(socket, outgoing));
+    } // EventAgent#connectNetServer
+
+    /**
+     * @param {module:http.RequestOptions} requestOptions
+     * @param {string | Array<string>} [outgoing='**']
+     * @param {boolean} [binary=false]
+     * @returns {{close: Function}}
+     * @see https://nodejs.org/docs/latest-v16.x/api/http.html#httprequestoptions-callback
+     */
+    connectHttpRequest(requestOptions = {}, outgoing = '**', binary = false) {
+        util.assert(util.isObject(requestOptions),
+            'expected requestOptions to be an object');
+        util.assert(util.isEventPattern(outgoing) || util.isEventPatternArray(outgoing),
+            'expected outgoing to be an event string or event string array');
+
+        const
+            outgoingEvents = util.toArray(outgoing),
+            protocolModule = requestOptions.protocol === 'https' ? require('https') : require('http'),
+            eventSender    = (event) => new Promise((resolve, reject) => {
+                const {headers, body} = event.encode(binary);
+                protocolModule.request({
+                    method: 'POST',
+                    ...requestOptions,
+                    headers: {
+                        ...requestOptions.headers,
+                        ...headers
+                    }
+                }).on('error', reject).end(body, resolve);
+            }),
+            attachSender   = () => outgoingEvents.every(eventPattern => this.on(eventPattern, eventSender)),
+            detachSender   = () => outgoingEvents.every(eventPattern => this.off(eventPattern, eventSender));
+
+        attachSender();
+        return {close: detachSender};
+    } // EventAgent#connectHttpRequest
+
+    /**
+     * @param {module:http.IncomingMessage} request
+     * @param {module:http.ServerResponse} response
+     * @returns {void}
+     * @see https://nodejs.org/docs/latest-v16.x/api/http.html#class-httpincomingmessage
+     */
+    connectHttpConnection(request, response) {
+        util.assert(util.isFunction(request?.on),
+            'expected request to be an http incoming message');
+
+        const chunks = [];
+        request.on('data', chunk => chunks.push(chunk));
+        request.on('end', () => {
+            try {
+                this.decode({
+                    headers: request.headers,
+                    body:    chunks.join('')
+                }).emit();
+                response.writeHead(202, 'Accepted').end();
+            } catch (err) {
+                console.error(err);
+                response.writeHead(400, 'Bad Request').end();
+            }
+        });
+    } // EventAgent#connectHttpConnection
+
+    /**
+     * @param {module:http.Server} server
+     * @returns {void}
+     * @see https://nodejs.org/docs/latest-v16.x/api/http.html#class-httpserver
+     */
+    connectHttpServer(server) {
+        util.assert(util.isFunction(server?.on),
+            'expected server to be an http Server');
+
+        server.on('request', (request, response) => this.connectHttpConnection(request, response));
+    } // EventAgent#connectHttpServer
 
 } // EventAgent
 

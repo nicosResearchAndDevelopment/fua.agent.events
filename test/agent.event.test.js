@@ -1,13 +1,20 @@
 const
-    {describe, test, before} = require('mocha'),
-    expect                   = require('expect'),
-    EventAgent               = require('../src/agent.event.js'),
-    SocketIO                 = require('socket.io'),
-    SocketIOClient           = require('socket.io-client'),
-    net                      = require('net'),
-    tls                      = require('tls');
+    {describe, test, afterEach} = require('mocha'),
+    expect                      = require('expect'),
+    EventAgent                  = require('../src/agent.event.js'),
+    SocketIO                    = require('socket.io'),
+    SocketIOClient              = require('socket.io-client'),
+    net                         = require('net'),
+    http                        = require('http');
 
 describe('agent.event', function () {
+
+    let cleanUp = null;
+    afterEach(async function () {
+        if (!cleanUp) return;
+        await cleanUp();
+        cleanUp = null;
+    });
 
     test('basic usage', async function () {
 
@@ -103,96 +110,201 @@ describe('agent.event', function () {
 
     }); // test
 
-    test('connectIOSocket', async function () {
+    test('socket.io connection', async function () {
+        const PORT = 3000;
 
-        const
-            PORT         = 3000,
-            ioServer     = new SocketIO.Server(PORT),
-            serverAgent  = new EventAgent(),
-            clientSocket = SocketIOClient.io('ws://localhost:' + PORT),
-            clientAgent  = new EventAgent();
+        const serverAgent = new EventAgent();
+        const ioServer    = new SocketIO.Server(PORT);
+        serverAgent.connectIOServer(ioServer, 'server.to.**');
+        console.log('io server is listening');
 
-        clientAgent.connectIOSocket(clientSocket, 'client.to.server.*');
-        ioServer.on('connection', function (serverSocket) {
-            serverAgent.connectIOSocket(serverSocket, 'server.to.client.*');
-        });
+        cleanUp = async function () {
+            await new Promise(resolve => ioServer.close(resolve));
+        };
 
+        const clientAgent  = new EventAgent();
+        const clientSocket = SocketIOClient.io('ws://localhost:' + PORT);
+        clientAgent.connectIOSocket(clientSocket, 'client.to.**');
+
+        await new Promise(resolve => clientSocket.on('connect', resolve));
+        console.log('io socket is connected');
+
+        cleanUp = async function () {
+            clientSocket.close();
+            await new Promise(resolve => ioServer.close(resolve));
+        };
+
+        await agentHelloWorldHandshake(serverAgent, clientAgent);
+        console.log('handshake is finished');
+    });
+
+    test('net connection', async function () {
+        const PORT = 3001;
+
+        const serverAgent = new EventAgent();
+        const netServer   = net.createServer();
+        serverAgent.connectNetServer(netServer, 'server.to.**');
+
+        await new Promise(resolve => netServer.listen(PORT, resolve));
+        console.log('net server is listening');
+
+        cleanUp = async function () {
+            await new Promise(resolve => netServer.close(resolve));
+        };
+
+        const clientAgent  = new EventAgent();
+        const clientSocket = net.connect(PORT);
+        clientAgent.connectNetSocket(clientSocket, 'client.to.**');
+
+        await new Promise(resolve => clientSocket.on('connect', resolve));
+        console.log('net socket is connected');
+
+        cleanUp = async function () {
+            await new Promise(resolve => clientSocket.end(resolve));
+            await new Promise(resolve => netServer.close(resolve));
+        };
+
+        await agentHelloWorldHandshake(serverAgent, clientAgent);
+        console.log('handshake is finished');
+    });
+
+    test('http connection', async function () {
+        const PORT = 3002;
+
+        const serverAgent = new EventAgent();
+        const httpServer  = http.createServer();
+        serverAgent.connectHttpServer(httpServer); // TODO
+
+        await new Promise(resolve => httpServer.listen(PORT, resolve));
+        console.log('http server is listening');
+
+        cleanUp = async function () {
+            await new Promise(resolve => httpServer.close(resolve));
+        };
+
+        const clientAgent = new EventAgent();
+        clientAgent.connectHttpRequest({port: PORT}, 'client.to.**');
+
+        await agentTestRequest(serverAgent, clientAgent);
+        console.log('request is finished');
+    });
+
+}); // describe
+
+/**
+ * @param {EventAgent} serverAgent
+ * @param {EventAgent} clientAgent
+ * @returns {Promise<void>}
+ */
+async function agentTestRequest(serverAgent, clientAgent) {
+    const LOG_EVENTS = false, LOG_ERROR = false;
+    await new Promise(async function (resolve, reject) {
         try {
-            await new Promise(resolve => clientSocket.on('connect', resolve));
-            await new Promise(async function (resolve, reject) {
+            serverAgent.once('client.to.server.test', function (clientEvent) {
                 try {
-                    clientAgent
-                        .on('server.to.client.hello', async function (serverEvent) {
-                            try {
-                                console.log(serverEvent);
-                                expect(serverEvent).toMatchObject({
-                                    type:   'server.to.client.hello',
-                                    source: 'server'
-                                });
-                                await serverAgent.emit({
-                                    type:   'client.to.server.hello',
-                                    source: 'client'
-                                }, true);
-                            } catch (err) {
-                                reject(err);
-                            }
-                        })
-                        .on('server.to.client.world', async function (serverEvent) {
-                            try {
-                                console.log(serverEvent);
-                                expect(serverEvent).toMatchObject({
-                                    type:   'server.to.client.world',
-                                    source: 'server'
-                                });
-                                await serverAgent.emit({
-                                    type:   'client.to.server.world',
-                                    source: 'client'
-                                }, true);
-                            } catch (err) {
-                                reject(err);
-                            }
-                        });
-                    await serverAgent
-                        .on('client.to.server.hello', async function (clientEvent) {
-                            try {
-                                console.log(clientEvent);
-                                expect(clientEvent).toMatchObject({
-                                    type:   'client.to.server.hello',
-                                    source: 'client'
-                                });
-                                await serverAgent.emit({
-                                    type:   'server.to.client.world',
-                                    source: 'server'
-                                }, true);
-                            } catch (err) {
-                                reject(err);
-                            }
-                        })
-                        .on('client.to.server.world', async function (clientEvent) {
-                            try {
-                                console.log(clientEvent);
-                                expect(clientEvent).toMatchObject({
-                                    type:   'client.to.server.world',
-                                    source: 'client'
-                                });
-                                resolve();
-                            } catch (err) {
-                                reject(err);
-                            }
-                        })
-                        .emit({
-                            type:   'server.to.client.hello',
-                            source: 'server'
-                        }, true);
+                    if (LOG_EVENTS) console.log(clientEvent);
+                    expect(clientEvent).toMatchObject({
+                        type:   'client.to.server.test',
+                        source: 'client'
+                    });
+                    resolve();
                 } catch (err) {
+                    if (LOG_ERROR) console.error(err);
                     reject(err);
                 }
             });
-        } finally {
-            clientSocket.close();
-            await new Promise(resolve => ioServer.close(resolve));
+            await clientAgent.emit({
+                type:   'client.to.server.test',
+                source: 'client'
+            }, true);
+        } catch (err) {
+            if (LOG_ERROR) console.error(err);
+            reject(err);
         }
+    });
+} // agentTestRequest
 
-    }); // test('connectIOSocket')
-
-}); // describe
+/**
+ * @param {EventAgent} serverAgent
+ * @param {EventAgent} clientAgent
+ * @returns {Promise<void>}
+ */
+async function agentHelloWorldHandshake(serverAgent, clientAgent) {
+    const LOG_EVENTS = false, LOG_ERROR = false;
+    expect(serverAgent).toBeInstanceOf(EventAgent);
+    expect(clientAgent).toBeInstanceOf(EventAgent);
+    await new Promise(async function (resolve, reject) {
+        try {
+            clientAgent
+                .on('server.to.client.hello', async function (serverEvent) {
+                    try {
+                        if (LOG_EVENTS) console.log(serverEvent);
+                        expect(serverEvent).toMatchObject({
+                            type:   'server.to.client.hello',
+                            source: 'server'
+                        });
+                        await serverAgent.emit({
+                            type:   'client.to.server.hello',
+                            source: 'client'
+                        }, true);
+                    } catch (err) {
+                        if (LOG_ERROR) console.error(err);
+                        reject(err);
+                    }
+                })
+                .on('server.to.client.world', async function (serverEvent) {
+                    try {
+                        if (LOG_EVENTS) console.log(serverEvent);
+                        expect(serverEvent).toMatchObject({
+                            type:   'server.to.client.world',
+                            source: 'server'
+                        });
+                        await serverAgent.emit({
+                            type:   'client.to.server.world',
+                            source: 'client'
+                        }, true);
+                    } catch (err) {
+                        if (LOG_ERROR) console.error(err);
+                        reject(err);
+                    }
+                });
+            await serverAgent
+                .on('client.to.server.hello', async function (clientEvent) {
+                    try {
+                        if (LOG_EVENTS) console.log(clientEvent);
+                        expect(clientEvent).toMatchObject({
+                            type:   'client.to.server.hello',
+                            source: 'client'
+                        });
+                        await serverAgent.emit({
+                            type:   'server.to.client.world',
+                            source: 'server'
+                        }, true);
+                    } catch (err) {
+                        if (LOG_ERROR) console.error(err);
+                        reject(err);
+                    }
+                })
+                .on('client.to.server.world', async function (clientEvent) {
+                    try {
+                        if (LOG_EVENTS) console.log(clientEvent);
+                        expect(clientEvent).toMatchObject({
+                            type:   'client.to.server.world',
+                            source: 'client'
+                        });
+                        resolve();
+                    } catch (err) {
+                        if (LOG_ERROR) console.error(err);
+                        reject(err);
+                    }
+                })
+                .emit({
+                    type:   'server.to.client.hello',
+                    source: 'server'
+                }, true);
+        } catch (err) {
+            if (LOG_ERROR) console.error(err);
+            reject(err);
+        }
+    });
+} // agentHelloWorldHandshake
