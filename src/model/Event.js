@@ -60,7 +60,7 @@ class Event {
             // ).then(() => this);
             return this.#emitter.emit(this.type, this).then(() => this);
         } else {
-            this.#emitter.emit(this.type, this);
+            this.#emitter.emit(this.type, this).catch(util.logError);
             return this;
         }
     } // Event#emit
