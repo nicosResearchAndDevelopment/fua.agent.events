@@ -9,6 +9,7 @@
   "dependencies": {
     "@nrd/fua.core.assert": "^2.0.0",
     "@nrd/fua.core.is": "^2.0.0",
+    "@nrd/fua.core.tty": "^2.0.0",
     "cloudevents": "6.x"
   },
   "devDependencies": {
