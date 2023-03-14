@@ -4,7 +4,7 @@ const
 
 class EventPatternEmitter {
 
-    /** @type {Map<EventPattern, Map<Function, boolean>>} */
+    /** @type {Map<model.EventPattern, Map<Function, boolean>>} */
     #events = new Map();
 
     on(eventPattern, listener) {

@@ -9,7 +9,7 @@ const
 // TODO improve event validators and usage with templates
 
 /**
- * @param {EventPattern} eventPattern
+ * @param {model.EventPattern} eventPattern
  * @param {Function} callback
  */
 events.on = function (eventPattern, callback) {
@@ -18,7 +18,7 @@ events.on = function (eventPattern, callback) {
 };
 
 /**
- * @param {EventPattern} eventPattern
+ * @param {model.EventPattern} eventPattern
  * @param {Function} callback
  */
 events.once = function (eventPattern, callback) {
@@ -27,7 +27,7 @@ events.once = function (eventPattern, callback) {
 };
 
 /**
- * @param {EventPattern} eventPattern
+ * @param {model.EventPattern} eventPattern
  * @param {Function} [callback]
  */
 events.off = function (eventPattern, callback) {
@@ -36,7 +36,7 @@ events.off = function (eventPattern, callback) {
 };
 
 /**
- * @param {EventName} eventName
+ * @param {model.EventName} eventName
  * @param {Function} validator
  */
 events.addValidator = function (eventName, validator) {
@@ -49,8 +49,8 @@ events.addValidator = function (eventName, validator) {
 
 /**
  * @template T
- * @param {CloudEvent<T>} eventParam
- * @returns {EmittingCloudEvent<T>}
+ * @param {model.CloudEvent<T>} eventParam
+ * @returns {model.EmittingCloudEvent<T>}
  */
 events.createEvent = function (eventParam) {
     const cloudEvent = (eventParam instanceof model.CloudEvent) ? eventParam : new model.CloudEvent(eventParam);
@@ -61,9 +61,9 @@ events.createEvent = function (eventParam) {
 
 /**
  * @template T
- * @param {CloudEvent<T>} eventParam
+ * @param {model.CloudEvent<T>} eventParam
  * @param {boolean} [ensureDelivery=false]
- * @returns {EmittingCloudEvent<T> | Promise<EmittingCloudEvent<T>>}
+ * @returns {model.EmittingCloudEvent<T> | Promise<model.EmittingCloudEvent<T>>}
  */
 events.emit = function (eventParam, ensureDelivery = false) {
     return this.createEvent(eventParam).emit(ensureDelivery);
@@ -71,8 +71,8 @@ events.emit = function (eventParam, ensureDelivery = false) {
 
 /**
  * @template T
- * @param {string | StructuredEncoding | BinaryEncoding} encoded
- * @returns {EmittingCloudEvent<T>}
+ * @param {string | model.StructuredEncoding | model.BinaryEncoding} encoded
+ * @returns {model.EmittingCloudEvent<T>}
  */
 events.decode = function (encoded) {
     const eventParam = (typeof encoded === 'string') ? JSON.parse(encoded) : util.decodeCloudEvent(encoded);
@@ -80,8 +80,8 @@ events.decode = function (encoded) {
 };
 
 /**
- * @param {CloudEvent} defaultParam
- * @returns {EmittingEventTemplate}
+ * @param {model.CloudEventParams} defaultParam
+ * @returns {model.EmittingEventTemplate}
  */
 events.createTemplate = function (defaultParam) {
     return new model.EmittingEventTemplate(defaultParam, patternEmitter, eventValidators);

@@ -10,7 +10,7 @@ const
  * @property {string} id
  * @property {string} specversion
  * @property {string} source
- * @property {EventName} type
+ * @property {model.EventName} type
  * @property {string} [datacontenttype]
  * @property {string} [dataschema]
  * @property {string} [subject]
@@ -25,8 +25,8 @@ class EmittingCloudEvent {
     #emitted = false;
 
     /**
-     * @param {CloudEvent<T>} cloudEvent
-     * @param {EventPatternEmitter} emitter
+     * @param {model.CloudEvent<T>} cloudEvent
+     * @param {model.EventPatternEmitter} emitter
      */
     constructor(cloudEvent, emitter) {
         assert.instance(cloudEvent, model.CloudEvent);
@@ -63,7 +63,7 @@ class EmittingCloudEvent {
 
     /**
      * @param {boolean} [binary=false]
-     * @returns {StructuredEncoding | BinaryEncoding}
+     * @returns {model.StructuredEncoding | model.BinaryEncoding}
      */
     encode(binary = false) {
         const cloudEvent = new model.CloudEvent(this);

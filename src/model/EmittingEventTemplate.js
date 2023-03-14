@@ -9,9 +9,9 @@ class EmittingEventTemplate {
     #validators = null;
 
     /**
-     * @param {CloudEventParams} defaultParam
-     * @param {EventPatternEmitter} emitter
-     * @param {Map<EventName, Function>} validators
+     * @param {model.CloudEventParams} defaultParam
+     * @param {model.EventPatternEmitter} emitter
+     * @param {Map<model.EventName, Function>} validators
      */
     constructor(defaultParam, emitter, validators) {
         assert.object(defaultParam);
@@ -24,8 +24,8 @@ class EmittingEventTemplate {
 
     /**
      * @template T
-     * @param {CloudEventParams<T>} eventParam
-     * @returns {EmittingCloudEvent<T>}
+     * @param {model.CloudEventParams<T>} eventParam
+     * @returns {model.EmittingCloudEvent<T>}
      */
     fromEvent(eventParam) {
         assert.object(eventParam);
@@ -38,7 +38,7 @@ class EmittingEventTemplate {
      * @template T
      * @param {any} eventData
      * @param {string} [contentType]
-     * @returns {EmittingCloudEvent<T>}
+     * @returns {model.EmittingCloudEvent<T>}
      */
     fromData(eventData, contentType) {
         const eventParam = contentType ? {data: eventData, datacontenttype: contentType} : {data: eventData};
@@ -48,7 +48,7 @@ class EmittingEventTemplate {
     /**
      * @template T
      * @param {Object} eventData
-     * @returns {EmittingCloudEvent<T>}
+     * @returns {model.EmittingCloudEvent<T>}
      */
     fromJSON(eventData) {
         return this.fromData(eventData, 'application/json');
