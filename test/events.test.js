@@ -1,7 +1,7 @@
 const
     {describe, test, afterEach} = require('mocha'),
-    expect = require('expect'),
-    events = require('../src/events.js');
+    expect                      = require('expect'),
+    Events                      = require('../src/events.js');
 
 describe('fua.agent.events', function () {
 
@@ -16,18 +16,18 @@ describe('fua.agent.events', function () {
 
         let sum = 0;
 
-        events.on('type.method.add', (event) => {
+        Events.on('type.method.add', (event) => {
             const {value} = event.data;
             if (typeof value !== 'number' || isNaN(value))
                 throw new Error('not a number');
             sum += value;
         });
 
-        const event = events.createEvent({
-            type: 'type.method.add',
-            source: 'http://...',
+        const event = Events.createEvent({
+            type:            'type.method.add',
+            source:          'http://...',
             datacontenttype: 'application/json',
-            data: {value: 2}
+            data:            {value: 2}
         });
 
         expect(typeof event.emit).toBe('function');
@@ -35,57 +35,57 @@ describe('fua.agent.events', function () {
 
         expect(sum).toBe(2);
 
-        await events.createEvent({
-            type: 'type.method.add',
-            source: 'http://...',
+        await Events.createEvent({
+            type:            'type.method.add',
+            source:          'http://...',
             datacontenttype: 'application/json',
-            data: {value: 3}
+            data:            {value: 3}
         }).emit(true); // sum += 3
 
         expect(() => event.emit()).toThrow();
-        await events.createEvent(event).emit(true); // sum += 2
+        await Events.createEvent(event).emit(true); // sum += 2
 
         expect(sum).toBe(7);
 
-        await events.emit({
-            type: 'type.method.add',
-            source: 'http://...',
+        await Events.emit({
+            type:            'type.method.add',
+            source:          'http://...',
             datacontenttype: 'application/json',
-            data: {value: 1}
+            data:            {value: 1}
         }, true); // sum += 1
 
-        await events.emit(event, true); // sum += 2
+        await Events.emit(event, true); // sum += 2
 
         expect(sum).toBe(10);
 
-        await expect(events.emit({
-            type: 'type.method.add',
-            source: 'http://...',
+        await expect(Events.emit({
+            type:            'type.method.add',
+            source:          'http://...',
             datacontenttype: 'text/plain',
-            data: Buffer.from('Hello World!').toString('base64')
+            data:            Buffer.from('Hello World!').toString('base64')
         }, true)).rejects.toThrow();
 
         const
-            event2 = events.createEvent({
-                type: 'type.method.add',
-                source: 'http://...',
+            event2            = Events.createEvent({
+                type:            'type.method.add',
+                source:          'http://...',
                 datacontenttype: 'application/json',
-                data: {value: 5}
+                data:            {value: 5}
             }),
             event2_structured = event2.encode(),
-            event2_binary = event2.encode(true);
+            event2_binary     = event2.encode(true);
 
-        events.decode(event2_structured.body).emit(true); // sum += 5
-        events.decode(event2_binary).emit(true); // sum += 5
+        Events.decode(event2_structured.body).emit(true); // sum += 5
+        Events.decode(event2_binary).emit(true); // sum += 5
 
         expect(sum).toBe(20);
 
-        const template = events.createTemplate({
-            type: 'type.method.add',
+        const template = Events.createTemplate({
+            type:   'type.method.add',
             source: 'http://...'
         });
 
-        events.addValidator('type.method.add', function (cloudEvent) {
+        Events.addValidator('type.method.add', function (cloudEvent) {
             if (typeof cloudEvent.data !== 'object')
                 throw new Error('expected data to be an object');
             if (cloudEvent.datacontenttype !== 'application/json')

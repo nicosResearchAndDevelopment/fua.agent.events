@@ -1,20 +1,20 @@
 const
     {describe, test} = require('mocha'),
-    expect = require('expect'),
-    util = require('../src/util.js');
+    expect           = require('expect'),
+    util             = require('../src/util.js');
 
 describe('fua.agent.events.util', function () {
 
     test('eventNameMatchesPattern', async function () {
 
         const
-            _events = new Map(),
-            _on = (eventPattern = '**', listener = () => null, once = false) => {
+            _events      = new Map(),
+            _on          = (eventPattern = '**', listener = () => null, once = false) => {
                 let listeners = _events.get(eventPattern);
                 if (!listeners) _events.set(eventPattern, listeners = new Map());
                 listeners.set(listener, once);
             },
-            _examples = [
+            _examples    = [
                 'test.hello',
                 'test.hello.world',
                 'test.hello.world.123456789',
