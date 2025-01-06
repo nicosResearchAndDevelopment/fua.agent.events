@@ -1,6 +1,6 @@
 const
     model = require('../model.js'),
-    assert = require('@nrd/fua.core.assert');
+    assert = require('@fua/core.assert');
 
 class EmittingEventTemplate {
 

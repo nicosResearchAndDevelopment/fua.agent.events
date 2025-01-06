@@ -1,14 +1,14 @@
 const
     Events             = exports,
     {name: identifier} = require('../package.json'),
-    assert             = require('@nrd/fua.core.assert');
+    assert             = require('@fua/core.assert');
 
 assert(!global[identifier], 'unable to load a second uncached version of the singleton ' + identifier);
 Object.defineProperty(global, identifier, {value: Events, configurable: false, writable: false, enumerable: false});
 
 const
     _Events = Object.create(null),
-    is      = require('@nrd/fua.core.is'),
+    is      = require('@fua/core.is'),
     util    = require('./util.js'),
     model   = require('./model.js');
 

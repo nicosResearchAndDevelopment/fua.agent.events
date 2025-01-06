@@ -1,6 +1,6 @@
 const
     util = require('../util.js'),
-    assert = require('@nrd/fua.core.assert');
+    assert = require('@fua/core.assert');
 
 class EventPatternEmitter {
 

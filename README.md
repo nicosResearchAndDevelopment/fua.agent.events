@@ -1,4 +1,4 @@
-# @nrd/fua.agent.events
+# @fua/agent.events
 
 ## Usage Analysis
 

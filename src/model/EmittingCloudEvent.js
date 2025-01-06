@@ -1,9 +1,9 @@
 const
     util = require('../util.js'),
     model = require('../model.js'),
-    assert = require('@nrd/fua.core.assert'),
-    is = require('@nrd/fua.core.is'),
-    tty = require('@nrd/fua.core.tty');
+    assert = require('@fua/core.assert'),
+    is = require('@fua/core.is'),
+    tty = require('@fua/core.tty');
 
 /**
  * @template T
